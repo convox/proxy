@@ -10,4 +10,4 @@ WORKDIR /go/src/github.com/convox/proxy
 COPY . /go/src/github.com/convox/proxy
 RUN go install ./...
 
-ENTRYPOINT ["/go/bin/proxy"]
+ENTRYPOINT ["proxy"]
