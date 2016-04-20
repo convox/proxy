@@ -10,4 +10,4 @@ Simple TCP proxy wrapper to implement proxy protocol when necessary
 
 #### PROXY protocol
 
-    $ proxy 7000 mybackend.local:5000 proxy
+    $ proxy 7000 mybackend.local:5000 tcp proxy
