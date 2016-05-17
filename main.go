@@ -18,8 +18,12 @@ import (
 )
 
 func die(err error) {
-	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
+	warn(err)
 	os.Exit(1)
+}
+
+func warn(err error) {
+	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 }
 
 func main() {
@@ -84,7 +88,8 @@ func handleProxyConnection(in net.Conn, to string) {
 	out, err := net.DialTimeout("tcp", to, 5*time.Second)
 
 	if err != nil {
-		die(err)
+		warn(err)
+		return
 	}
 
 	header := fmt.Sprintf("PROXY TCP4 %s 127.0.0.1 %s %s\r\n", rp[0], rp[1], top[1])
@@ -103,7 +108,8 @@ func handleTcpConnection(in net.Conn, to string) {
 	out, err := net.DialTimeout("tcp", to, 5*time.Second)
 
 	if err != nil {
-		die(err)
+		warn(err)
+		return
 	}
 
 	pipe(in, out)
