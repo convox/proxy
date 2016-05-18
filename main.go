@@ -87,30 +87,13 @@ func main() {
 	}
 }
 
-func dial(addr string, secure bool) (net.Conn, error) {
-	if secure {
-		config := &tls.Config{
-			InsecureSkipVerify: true,
-		}
-
-		dialer := &net.Dialer{
-			Timeout: 5 * time.Second,
-		}
-
-		return tls.DialWithDialer(dialer, "tcp", addr, config)
-	} else {
-		return net.DialTimeout("tcp", addr, 5*time.Second)
-	}
-
-}
-
 func handleProxyConnection(in net.Conn, to string, secure bool) {
 	rp := strings.SplitN(in.RemoteAddr().String(), ":", 2)
 	top := strings.SplitN(to, ":", 2)
 
 	fmt.Printf("proxy %s:%s -> %s:%s secure=%t\n", rp[0], rp[1], top[0], top[1], secure)
 
-	out, err := dial(to, secure)
+	out, err := net.DialTimeout("tcp", to, 5*time.Second)
 
 	if err != nil {
 		warn(err)
@@ -121,6 +104,12 @@ func handleProxyConnection(in net.Conn, to string, secure bool) {
 
 	out.Write([]byte(header))
 
+	if secure {
+		out = tls.Client(out, &tls.Config{
+			InsecureSkipVerify: true,
+		})
+	}
+
 	pipe(in, out)
 }
 
@@ -130,11 +119,17 @@ func handleTcpConnection(in net.Conn, to string, secure bool) {
 
 	fmt.Printf("tcp %s:%s -> %s:%s secure=%t\n", rp[0], rp[1], top[0], top[1], secure)
 
-	out, err := dial(to, secure)
+	out, err := net.DialTimeout("tcp", to, 5*time.Second)
 
 	if err != nil {
 		warn(err)
 		return
+	}
+
+	if secure {
+		out = tls.Client(out, &tls.Config{
+			InsecureSkipVerify: true,
+		})
 	}
 
 	pipe(in, out)
