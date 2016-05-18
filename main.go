@@ -38,17 +38,15 @@ func main() {
 	proxy := false
 	secure := false
 
-	for _, option := range os.Args[4:] {
-		switch option {
-		case "proxy":
-			proxy = true
-		case "secure":
-			secure = true
+	if len(os.Args) > 4 {
+		for _, option := range os.Args[4:] {
+			switch option {
+			case "proxy":
+				proxy = true
+			case "secure":
+				secure = true
+			}
 		}
-	}
-
-	if len(os.Args) > 4 && os.Args[4] == "proxy" {
-		proxy = true
 	}
 
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%s", from))
