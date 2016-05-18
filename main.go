@@ -28,7 +28,7 @@ func warn(err error) {
 
 func main() {
 	if len(os.Args) < 4 {
-		fmt.Fprintf(os.Stderr, "usage: proxy <from> <to> <protocol>\n")
+		fmt.Fprintf(os.Stderr, "usage: proxy <from> <to> <protocol> [options]\n")
 		os.Exit(1)
 	}
 
@@ -36,6 +36,16 @@ func main() {
 	to := os.Args[2]
 	protocol := os.Args[3]
 	proxy := false
+	secure := false
+
+	for _, option := range os.Args[4:] {
+		switch option {
+		case "proxy":
+			proxy = true
+		case "secure":
+			secure = true
+		}
+	}
 
 	if len(os.Args) > 4 && os.Args[4] == "proxy" {
 		proxy = true
@@ -72,20 +82,35 @@ func main() {
 		}
 
 		if proxy {
-			go handleProxyConnection(conn, to)
+			go handleProxyConnection(conn, to, secure)
 		} else {
-			go handleTcpConnection(conn, to)
+			go handleTcpConnection(conn, to, secure)
 		}
 	}
 }
 
-func handleProxyConnection(in net.Conn, to string) {
+func dial(addr string, secure bool) (net.Conn, error) {
+	if secure {
+		config := &tls.Config{}
+
+		dialer := &net.Dialer{
+			Timeout: 5 * time.Second,
+		}
+
+		return tls.DialWithDialer(dialer, "tcp", addr, config)
+	} else {
+		return net.DialTimeout("tcp", addr, 5*time.Second)
+	}
+
+}
+
+func handleProxyConnection(in net.Conn, to string, secure bool) {
 	rp := strings.SplitN(in.RemoteAddr().String(), ":", 2)
 	top := strings.SplitN(to, ":", 2)
 
 	fmt.Printf("proxy %s:%s -> %s:%s\n", rp[0], rp[1], top[0], top[1])
 
-	out, err := net.DialTimeout("tcp", to, 5*time.Second)
+	out, err := dial(to, secure)
 
 	if err != nil {
 		warn(err)
@@ -99,13 +124,13 @@ func handleProxyConnection(in net.Conn, to string) {
 	pipe(in, out)
 }
 
-func handleTcpConnection(in net.Conn, to string) {
+func handleTcpConnection(in net.Conn, to string, secure bool) {
 	rp := strings.SplitN(in.RemoteAddr().String(), ":", 2)
 	top := strings.SplitN(to, ":", 2)
 
 	fmt.Printf("tcp %s:%s -> %s:%s\n", rp[0], rp[1], top[0], top[1])
 
-	out, err := net.DialTimeout("tcp", to, 5*time.Second)
+	out, err := dial(to, secure)
 
 	if err != nil {
 		warn(err)
