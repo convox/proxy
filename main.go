@@ -91,7 +91,9 @@ func main() {
 
 func dial(addr string, secure bool) (net.Conn, error) {
 	if secure {
-		config := &tls.Config{}
+		config := &tls.Config{
+			InsecureSkipVerify: true,
+		}
 
 		dialer := &net.Dialer{
 			Timeout: 5 * time.Second,
@@ -108,7 +110,7 @@ func handleProxyConnection(in net.Conn, to string, secure bool) {
 	rp := strings.SplitN(in.RemoteAddr().String(), ":", 2)
 	top := strings.SplitN(to, ":", 2)
 
-	fmt.Printf("proxy %s:%s -> %s:%s\n", rp[0], rp[1], top[0], top[1])
+	fmt.Printf("proxy %s:%s -> %s:%s secure=%t\n", rp[0], rp[1], top[0], top[1], secure)
 
 	out, err := dial(to, secure)
 
@@ -128,7 +130,7 @@ func handleTcpConnection(in net.Conn, to string, secure bool) {
 	rp := strings.SplitN(in.RemoteAddr().String(), ":", 2)
 	top := strings.SplitN(to, ":", 2)
 
-	fmt.Printf("tcp %s:%s -> %s:%s\n", rp[0], rp[1], top[0], top[1])
+	fmt.Printf("tcp %s:%s -> %s:%s secure=%t\n", rp[0], rp[1], top[0], top[1], secure)
 
 	out, err := dial(to, secure)
 
