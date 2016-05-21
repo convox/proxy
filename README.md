@@ -1,6 +1,6 @@
 # convox/proxy
 
-Simple TCP proxy wrapper to implement proxy protocol when necessary
+Simple TCP proxy to simulate TLS and PROXY protocol locally
 
 ## Usage
 
