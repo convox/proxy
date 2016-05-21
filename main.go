@@ -18,13 +18,17 @@ import (
 )
 
 func die(err error) {
-	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
+	warn(err)
 	os.Exit(1)
+}
+
+func warn(err error) {
+	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 }
 
 func main() {
 	if len(os.Args) < 4 {
-		fmt.Fprintf(os.Stderr, "usage: proxy <from> <to> <protocol>\n")
+		fmt.Fprintf(os.Stderr, "usage: proxy <from> <to> <protocol> [options]\n")
 		os.Exit(1)
 	}
 
@@ -32,9 +36,17 @@ func main() {
 	to := os.Args[2]
 	protocol := os.Args[3]
 	proxy := false
+	secure := false
 
-	if len(os.Args) > 4 && os.Args[4] == "proxy" {
-		proxy = true
+	if len(os.Args) > 4 {
+		for _, option := range os.Args[4:] {
+			switch option {
+			case "proxy":
+				proxy = true
+			case "secure":
+				secure = true
+			}
+		}
 	}
 
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%s", from))
@@ -68,42 +80,56 @@ func main() {
 		}
 
 		if proxy {
-			go handleProxyConnection(conn, to)
+			go handleProxyConnection(conn, to, secure)
 		} else {
-			go handleTcpConnection(conn, to)
+			go handleTcpConnection(conn, to, secure)
 		}
 	}
 }
 
-func handleProxyConnection(in net.Conn, to string) {
+func handleProxyConnection(in net.Conn, to string, secure bool) {
 	rp := strings.SplitN(in.RemoteAddr().String(), ":", 2)
 	top := strings.SplitN(to, ":", 2)
 
-	fmt.Printf("proxy %s:%s -> %s:%s\n", rp[0], rp[1], top[0], top[1])
+	fmt.Printf("proxy %s:%s -> %s:%s secure=%t\n", rp[0], rp[1], top[0], top[1], secure)
 
 	out, err := net.DialTimeout("tcp", to, 5*time.Second)
 
 	if err != nil {
-		die(err)
+		warn(err)
+		return
 	}
 
 	header := fmt.Sprintf("PROXY TCP4 %s 127.0.0.1 %s %s\r\n", rp[0], rp[1], top[1])
 
 	out.Write([]byte(header))
 
+	if secure {
+		out = tls.Client(out, &tls.Config{
+			InsecureSkipVerify: true,
+		})
+	}
+
 	pipe(in, out)
 }
 
-func handleTcpConnection(in net.Conn, to string) {
+func handleTcpConnection(in net.Conn, to string, secure bool) {
 	rp := strings.SplitN(in.RemoteAddr().String(), ":", 2)
 	top := strings.SplitN(to, ":", 2)
 
-	fmt.Printf("tcp %s:%s -> %s:%s\n", rp[0], rp[1], top[0], top[1])
+	fmt.Printf("tcp %s:%s -> %s:%s secure=%t\n", rp[0], rp[1], top[0], top[1], secure)
 
 	out, err := net.DialTimeout("tcp", to, 5*time.Second)
 
 	if err != nil {
-		die(err)
+		warn(err)
+		return
+	}
+
+	if secure {
+		out = tls.Client(out, &tls.Config{
+			InsecureSkipVerify: true,
+		})
 	}
 
 	pipe(in, out)

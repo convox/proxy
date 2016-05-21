@@ -1,0 +1,11 @@
+#!/bin/sh
+
+from=${1}
+shift
+toport=${1}
+shift
+args=${@}
+
+eval to="\$HOST_PORT_${toport}_TCP_ADDR:\$HOST_PORT_${toport}_TCP_PORT"
+
+exec proxy $from $to $args
