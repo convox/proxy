@@ -88,6 +88,8 @@ func main() {
 }
 
 func handleProxyConnection(in net.Conn, to string, secure bool) {
+	defer in.Close()
+
 	rp := strings.SplitN(in.RemoteAddr().String(), ":", 2)
 	top := strings.SplitN(to, ":", 2)
 
@@ -99,6 +101,8 @@ func handleProxyConnection(in net.Conn, to string, secure bool) {
 		warn(err)
 		return
 	}
+
+	defer out.Close()
 
 	header := fmt.Sprintf("PROXY TCP4 %s 127.0.0.1 %s %s\r\n", rp[0], rp[1], top[1])
 
@@ -114,6 +118,8 @@ func handleProxyConnection(in net.Conn, to string, secure bool) {
 }
 
 func handleTcpConnection(in net.Conn, to string, secure bool) {
+	defer in.Close()
+
 	rp := strings.SplitN(in.RemoteAddr().String(), ":", 2)
 	top := strings.SplitN(to, ":", 2)
 
@@ -125,6 +131,8 @@ func handleTcpConnection(in net.Conn, to string, secure bool) {
 		warn(err)
 		return
 	}
+
+	defer out.Close()
 
 	if secure {
 		out = tls.Client(out, &tls.Config{
