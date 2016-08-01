@@ -115,6 +115,9 @@ func handleProxyConnection(in net.Conn, to string, secure bool) {
 	}
 
 	pipe(in, out)
+
+	in.Close()
+	out.Close()
 }
 
 func handleTcpConnection(in net.Conn, to string, secure bool) {
