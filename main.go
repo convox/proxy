@@ -13,7 +13,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -116,6 +115,8 @@ func handleProxyConnection(in net.Conn, to string, secure bool) {
 
 	pipe(in, out)
 
+	fmt.Printf("closing %s:%s\n", rp[0], rp[1])
+
 	in.Close()
 	out.Close()
 }
@@ -144,20 +145,25 @@ func handleTcpConnection(in net.Conn, to string, secure bool) {
 	}
 
 	pipe(in, out)
+
+	fmt.Printf("closing %s:%s\n", rp[0], rp[1])
+
+	in.Close()
+	out.Close()
 }
 
-func pipe(a, b io.ReadWriter) {
-	var wg sync.WaitGroup
+func pipe(a, b io.ReadWriter) error {
+	ch := make(chan error)
 
-	wg.Add(2)
-	go copyWait(a, b, &wg)
-	go copyWait(b, a, &wg)
-	wg.Wait()
+	go copyWait(a, b, ch)
+	go copyWait(b, a, ch)
+
+	return <-ch
 }
 
-func copyWait(to io.Writer, from io.Reader, wg *sync.WaitGroup) {
-	defer wg.Done()
-	io.Copy(to, from)
+func copyWait(to io.Writer, from io.Reader, ch chan error) {
+	_, err := io.Copy(to, from)
+	ch <- err
 }
 
 func generateSelfSignedCertificate(host string) (tls.Certificate, error) {
