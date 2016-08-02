@@ -116,9 +116,6 @@ func handleProxyConnection(in net.Conn, to string, secure bool) {
 	pipe(in, out)
 
 	fmt.Printf("closing %s:%s\n", rp[0], rp[1])
-
-	in.Close()
-	out.Close()
 }
 
 func handleTcpConnection(in net.Conn, to string, secure bool) {
@@ -147,9 +144,6 @@ func handleTcpConnection(in net.Conn, to string, secure bool) {
 	pipe(in, out)
 
 	fmt.Printf("closing %s:%s\n", rp[0], rp[1])
-
-	in.Close()
-	out.Close()
 }
 
 func pipe(a, b io.ReadWriter) error {
