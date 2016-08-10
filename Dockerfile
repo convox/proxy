@@ -1,8 +1,7 @@
-FROM gliderlabs/alpine:3.2
+FROM gliderlabs/alpine:3.4
 
-RUN apk-install git
+RUN apk add --no-cache git go
 
-RUN apk-install go
 ENV GOPATH /go
 ENV PATH /go/bin:$PATH
 
