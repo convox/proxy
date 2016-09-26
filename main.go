@@ -105,13 +105,13 @@ func handleProxyConnection(in net.Conn, to string, secure bool) {
 
 	header := fmt.Sprintf("PROXY TCP4 %s 127.0.0.1 %s %s\r\n", rp[0], rp[1], top[1])
 
-	out.Write([]byte(header))
-
 	if secure {
 		out = tls.Client(out, &tls.Config{
 			InsecureSkipVerify: true,
 		})
 	}
+
+	out.Write([]byte(header))
 
 	pipe(in, out)
 
