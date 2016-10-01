@@ -6,6 +6,10 @@ toport=${1}
 shift
 args=${@}
 
-eval to="\$HOST_PORT_${toport}_TCP_ADDR:\$HOST_PORT_${toport}_TCP_PORT"
+# Default for Docker networks
+to="host:$toport"
+
+# Fallback to legacy links if HOST_PORT variable is not empty
+[ -n "$HOST_PORT" ] && eval to="\$HOST_PORT_${toport}_TCP_ADDR:\$HOST_PORT_${toport}_TCP_PORT"
 
 exec proxy $from $to $args
